@@ -2,7 +2,7 @@
 .*.swp
 .*.swo
 
-# DIST
+# Local dev build dirs (release artifacts go to dist/, not ignored)
 /build/
 /include/
 /lib/

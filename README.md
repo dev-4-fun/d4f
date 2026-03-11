@@ -21,23 +21,29 @@ A dynamic generic array type: contiguous storage, iteration, push/pop, slice, co
 
 From the project root:
 
-- **Build all array artifacts (static, shared, header-only):**
+- **Local development (default):** debug symbols, output in `build/`, `include/`, `lib/` (these dirs are gitignored):
 
   ```bash
   make array
   ```
 
-  This builds the static library, the shared library, and the header-only file. Directories `build/`, `include/d4f/`, and `lib/` are created automatically.
+- **Release build for distribution:** `-O3`, no debug info, output in `dist/` (suitable for committing):
 
-- **Build individually:**
+  ```bash
+  make release
+  ```
 
-  | Variant         | Command           | Output                   |
-  | --------------- | ----------------- | ------------------------ |
-  | Static library  | `make array.a`    | `lib/libd4farray.a`      |
-  | Dynamic library | `make array.so`   | `lib/libd4farray.so`     |
-  | Header-only     | `make array_ho.h` | `include/d4f/array_ho.h` |
+  This produces `dist/include/d4f/`, `dist/lib/` with the same artifacts. Use when you want to add prebuilt libraries to the repo.
 
-  Compiler and flags (from the Makefile): `CC=clang`, `CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb`.
+- **Build individually (default = debug):**
+
+  | Variant         | Command           | Output (debug)              | Output (release)                 |
+  | --------------- | ----------------- | --------------------------- | -------------------------------- |
+  | Static library  | `make array.a`    | `lib/libd4farray.a`         | `dist/lib/libd4farray.a`         |
+  | Dynamic library | `make array.so`   | `lib/libd4farray.so`        | `dist/lib/libd4farray.so`        |
+  | Header-only     | `make array_ho.h` | `include/d4f/array_ho.h`    | `dist/include/d4f/array_ho.h`    |
+
+  Debug: `CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb`. Release: same plus `-O3`, no `-g`. `make clean` cleans dev dirs; `make clean-release` removes `dist/`.
 
 ### Usage
 

@@ -1,15 +1,26 @@
 SRC_DIR=src
-BUILD_DIR=build
-INCLUDE_DIR=include
-LIB_DIR=lib
 LIB_PREFIX=d4f
 CC=clang
-CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb
 
-.PHONY: clean array.a array.so array_ho.h
+# BUILD=debug (default, for local dev) or release (for dist, -O3, no debug)
+BUILD ?= debug
+ifeq ($(BUILD),release)
+  BUILD_DIR=dist/build
+  INCLUDE_DIR=dist/include
+  LIB_DIR=dist/lib
+  CFLAGS=-std=c89 -Wall -Wextra -pedantic -O3
+else
+  BUILD_DIR=build
+  INCLUDE_DIR=include
+  LIB_DIR=lib
+  CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb
+endif
 
-json:
-	$(CC) $(CFLAGS) -o json json.c helpers.c
+.PHONY: clean clean-release release array.a array.so array_ho.h
+
+# Release build: -O3, no debug symbols, output in dist/ (suitable for committing)
+release:
+	$(MAKE) BUILD=release array
 
 array.o: dirs
 	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/array.o $(SRC_DIR)/array.c -fPIC
@@ -31,6 +42,7 @@ array_ho.h: dirs
 	@echo "\n#endif" >> $(INCLUDE_DIR)/$(LIB_PREFIX)/array_ho.h
 
 array: array.a array.so array_ho.h
+	@true
 
 dirs:
 	mkdir -p $(BUILD_DIR)
@@ -41,4 +53,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf $(INCLUDE_DIR)
 	rm -rf $(LIB_DIR)
+
+clean-release:
+	rm -rf dist
 
