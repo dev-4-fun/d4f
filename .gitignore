@@ -6,9 +6,14 @@
 /build/
 /include/
 /lib/
+/dist/demo/
 
 # Artifacts
 *.dSYM
+/.cache/
 
 # AI files
 /.cursor/
+
+# Helper files
+/compile_commands.json

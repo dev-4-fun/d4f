@@ -47,22 +47,23 @@ From the project root:
 
 ### Usage
 
-- **Header-only:** In exactly one `.c` file define `D4F_ARRAY_IMPLEMENTATION` before including the header, then include `include/d4f/array_ho.h` (or your path to it). Other translation units include the same header without the macro.
-- **Static or dynamic:** Include `include/d4f/array.h` and link with `lib/libd4farray.a` or `-Llib -ld4farray` as appropriate.
+- **Header-only:** In exactly one `.c` file define `D4F_ARRAY_IMPLEMENTATION` before including the header, then `#include "d4f/array_ho.h"`. Add the directory that *contains* `d4f/` to the include path (e.g. `-I include` for dev or `-I dist/include` for release). Other translation units include the same header without the macro.
+- **Static or dynamic:** Include `d4f/array.h` (with `-I include` or `-I dist/include`) and link with `lib/libd4farray.a` or `-Llib -ld4farray` as appropriate.
 
 ### Example
 
 `examples/array_demo.c` uses the header-only variant. It:
 
 1. Creates an array from existing data with `array_from` and an empty array with capacity via `array_init`.
-2. Builds a “string” from a char array and uses `array_slice` (e.g. negative indices) to get a substring.
+2. Builds a “string” from a char array and uses `array_slice` (e.g. negative indices) to get a substring, then prints both.
 3. Uses `array_foreach` with callbacks: one to print each element, another to “map” (e.g. multiply by 2) into a second array.
+4. Calls `array_reset` on all arrays before exit.
 
 Snippet:
 
 ```c
 #define D4F_ARRAY_IMPLEMENTATION
-#include "include/d4f/array_ho.h"
+#include "d4f/array_ho.h"
 
 array_t arr = {0};
 array_from(&arr, data, sizeof(*data), count);
@@ -70,11 +71,14 @@ array_foreach(&arr, print_item, NULL);
 array_slice(&arr, -10, -2, &slice);
 ```
 
-Build and run the demo (after `make array`):
+Build and run the demo:
 
 ```bash
-clang -std=c89 -Wall -Wextra -pedantic -I. -o array_demo examples/array_demo.c && ./array_demo
+make demo
+./build/demo/array_demo
 ```
+
+For a release build, run `make BUILD=release demo`, then `./dist/demo/array_demo`. To build the demo manually (with headers in `include/`): `clang -std=c89 -Wall -Wextra -pedantic -I include -o array_demo examples/array_demo.c`.
 
 ---
 

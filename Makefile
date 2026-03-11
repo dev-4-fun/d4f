@@ -8,15 +8,17 @@ ifeq ($(BUILD),release)
   BUILD_DIR=dist/build
   INCLUDE_DIR=dist/include
   LIB_DIR=dist/lib
+  DEMO_DIR=dist/demo
   CFLAGS=-std=c89 -Wall -Wextra -pedantic -O3
 else
   BUILD_DIR=build
   INCLUDE_DIR=include
   LIB_DIR=lib
+  DEMO_DIR=build/demo
   CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb
 endif
 
-.PHONY: clean clean-release release array.a array.so array_ho.h
+.PHONY: clean clean-release release array.a array.so array_ho.h demo
 
 # Release build: -O3, no debug symbols, output in dist/ (suitable for committing)
 release:
@@ -43,6 +45,11 @@ array_ho.h: dirs
 
 array: array.a array.so array_ho.h
 	@true
+
+# Build demo binaries into DEMO_DIR (build/demo or dist/demo); -I so that #include "d4f/array_ho.h" works
+demo: array
+	@mkdir -p $(DEMO_DIR)
+	$(CC) $(CFLAGS) -I $(INCLUDE_DIR) -o $(DEMO_DIR)/array_demo examples/array_demo.c
 
 dirs:
 	mkdir -p $(BUILD_DIR)

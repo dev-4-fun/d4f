@@ -2,11 +2,11 @@
 #include <string.h>
 
 #define D4F_ARRAY_IMPLEMENTATION
-#include "include/d4f/array_ho.h"
+#include "d4f/array_ho.h"
 
 int print_item(void *item, size_t i, void *ctx) {
-  (void)ctx;
   const int val = *(int *)item;
+  (void)ctx;
   printf("a[%zu] = %d\n", i, val);
   return 0;
 }
@@ -14,6 +14,7 @@ int print_item(void *item, size_t i, void *ctx) {
 int mult_by_2(void *item, size_t i, void *ctx) {
   array_t *dest = ctx;
   int val = *(int *)item * 2;
+  (void)i;
   if (!array_push(dest, &val)) {
     fprintf(stderr, "Could not push item\n");
     return 1;
@@ -45,4 +46,9 @@ int main(void) {
 
   printf("string slice\n");
   printf("%s\n", (char *)string_slice.data_ptr);
+
+  array_reset(&arrays[0]);
+  array_reset(&arrays[1]);
+  array_reset(&string);
+  array_reset(&string_slice);
 }
