@@ -1,0 +1,14 @@
+# VIM swap
+.*.swp
+.*.swo
+
+# DIST
+/build/
+/include/
+/lib/
+
+# Artifacts
+*.dSYM
+
+# AI files
+/.cursor/
