@@ -82,6 +82,13 @@ For a release build, run `make BUILD=release demo`, then `./dist/demo/array_demo
 
 ---
 
+## Array View
+
+A lightweight view over existing contiguous memory. Build and usage details are in
+`docs/array_view.md`.
+
+---
+
 ## Future
 
 More micro-libraries will be documented in this README in separate sections. An **all-in-one** build (single library or header combining all modules) is planned.

@@ -1,4 +1,5 @@
 SRC_DIR=src
+TEST_DIR=tests
 LIB_PREFIX=d4f
 CC=clang
 
@@ -45,6 +46,31 @@ array_ho.h: dirs
 
 array: array.a array.so array_ho.h
 	@true
+
+array_view.o: dirs
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@ $(SRC_DIR)/$(subst .o, .c, $@) -fPIC
+
+array_view.h:
+	cp $(SRC_DIR)/$@ $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+
+array_view.a: array_view.o array_view.h
+	ar -r $(LIB_DIR)/lib$(LIB_PREFIX)$@ $(BUILD_DIR)/$<
+
+array_view.so: array_view.o array_view.h
+	$(CC) -shared -o $(LIB_DIR)/lib$(LIB_PREFIX)$@ $(BUILD_DIR)/$<
+
+array_view_ho.h: dirs
+	@echo "/* Header-only version of d4f/$@ */" > $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+	@cat $(SRC_DIR)/$(subst _ho,,$@) >> $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+	@echo "\n#ifdef D4F_ARRAY_VIEW_IMPLEMENTATION" >> $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+	@cat $(SRC_DIR)/$(subst .h,.c,$(subst _ho,,$@)) | grep -v "#define D4F_ARRAY_VIEW_IMPLEMENTATION" | grep -v '#include "array_view.h"' >> $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+	@echo "\n#endif" >> $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
+
+array_view: array_view.a array_view.so array_view_ho.h
+	@true
+
+array_view.test: array_view_ho.h
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ -I$(INCLUDE_DIR) $(TEST_DIR)/$@.c
 
 # Build demo binaries into DEMO_DIR (build/demo or dist/demo); -I so that #include "d4f/array_ho.h" works
 demo: array
