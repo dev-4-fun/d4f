@@ -37,17 +37,17 @@ From the project root:
 
 - **Build individually (default = debug):**
 
-  | Variant         | Command           | Output (debug)              | Output (release)                 |
-  | --------------- | ----------------- | --------------------------- | -------------------------------- |
-  | Static library  | `make array.a`    | `lib/libd4farray.a`         | `dist/lib/libd4farray.a`         |
-  | Dynamic library | `make array.so`   | `lib/libd4farray.so`        | `dist/lib/libd4farray.so`        |
-  | Header-only     | `make array_ho.h` | `include/d4f/array_ho.h`    | `dist/include/d4f/array_ho.h`    |
+  | Variant         | Command           | Output (debug)           | Output (release)              |
+  | --------------- | ----------------- | ------------------------ | ----------------------------- |
+  | Static library  | `make array.a`    | `lib/libd4farray.a`      | `dist/lib/libd4farray.a`      |
+  | Dynamic library | `make array.so`   | `lib/libd4farray.so`     | `dist/lib/libd4farray.so`     |
+  | Header-only     | `make array_ho.h` | `include/d4f/array_ho.h` | `dist/include/d4f/array_ho.h` |
 
   Debug: `CFLAGS=-std=c89 -Wall -Wextra -pedantic -glldb`. Release: same plus `-O3`, no `-g`. `make clean` cleans dev dirs; `make clean-release` removes `dist/`.
 
 ### Usage
 
-- **Header-only:** In exactly one `.c` file define `D4F_ARRAY_IMPLEMENTATION` before including the header, then `#include "d4f/array_ho.h"`. Add the directory that *contains* `d4f/` to the include path (e.g. `-I include` for dev or `-I dist/include` for release). Other translation units include the same header without the macro.
+- **Header-only:** In exactly one `.c` file define `D4F_ARRAY_IMPLEMENTATION` before including the header, then `#include "d4f/array_ho.h"`. Add the directory that _contains_ `d4f/` to the include path (e.g. `-I include` for dev or `-I dist/include` for release). Other translation units include the same header without the macro.
 - **Static or dynamic:** Include `d4f/array.h` (with `-I include` or `-I dist/include`) and link with `lib/libd4farray.a` or `-Llib -ld4farray` as appropriate.
 
 ### Example
@@ -85,7 +85,7 @@ For a release build, run `make BUILD=release demo`, then `./dist/demo/array_demo
 ## Array View
 
 A lightweight view over existing contiguous memory. Build and usage details are in
-`docs/array_view.md`.
+[`docs/array_view.md`](docs/array_view.md).
 
 ---
 

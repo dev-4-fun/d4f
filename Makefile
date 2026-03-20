@@ -24,6 +24,7 @@ endif
 # Release build: -O3, no debug symbols, output in dist/ (suitable for committing)
 release:
 	$(MAKE) BUILD=release array
+	$(MAKE) BUILD=release array_view
 
 array.o: dirs
 	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/array.o $(SRC_DIR)/array.c -fPIC
@@ -48,7 +49,7 @@ array: array.a array.so array_ho.h
 	@true
 
 array_view.o: dirs
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@ $(SRC_DIR)/$(subst .o, .c, $@) -fPIC
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@ $(SRC_DIR)/$(subst .o,.c,$@) -fPIC
 
 array_view.h:
 	cp $(SRC_DIR)/$@ $(INCLUDE_DIR)/$(LIB_PREFIX)/$@
