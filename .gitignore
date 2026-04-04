@@ -4,10 +4,8 @@
 
 # Local dev build dirs (release artifacts go to dist/, not ignored)
 /build/
-/include/
+/include/**/*_ho.h
 /lib/
-/dist/demo/
-/dist/build/
 /draft
 
 # Artifacts
@@ -19,3 +17,4 @@
 
 # Helper files
 /compile_commands.json
+/tags

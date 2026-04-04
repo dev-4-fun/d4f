@@ -1,0 +1,10 @@
+# Universal Ctags — https://docs.ctags.io/
+# Manual: ctags --options=.ctags -f tags -R src tests include
+# Or: make tags  (BSD/Xcode ctags: file list via find/xargs; Universal: -R + this file)
+
+--languages=C
+--tag-relative=yes
+--exclude=build
+--exclude=lib
+--exclude=dist
+--exclude=*_ho.h

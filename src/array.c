@@ -2,167 +2,146 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "d4f/array_view.h"
 #define D4F_ARRAY_IMPLEMENTATION
-#include "array.h"
+#include "d4f/array.h"
 
-#define D4F_ARRAY_INITIAL_CAP 64
-#define D4F_ARRAY_SUCCESS 1
-#define D4F_ARRAY_FAIL 0
+static const char *const _array_status_messages[] = {
+#define X(id, msg) msg,
+    D4F_ARRAY_VIEW_STATUS_LIST(X) D4F_ARRAY_STATUS_LIST(X)
+#undef X
+};
 
-#define D4F_ARRAY_PTR_VALIDATE(ptr)                                            \
-  do {                                                                         \
-    if (ptr == NULL) {                                                         \
-      D4F_ARRAY_ERROR("" #ptr " is NULL");                                     \
-      return D4F_ARRAY_FAIL;                                                   \
-    }                                                                          \
-  } while (0);
-
-#define D4F_ARRAY_ERROR(message) __error((message), __FILE__, __LINE__)
-
-static void __error(const char *message, const char *file, int line) {
-  fprintf(stderr, "[ERROR]%s:%d: %s\n", (file), (line), (message));
+static D4F_ARRAY_STATUS _array_maybe_grow_data(array_t *array, size_t item_size,
+                                               size_t new_length,
+                                               size_t new_capacity) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  array_view_t *view = (array_view_t *)array;
+  size_t capacity = array_capacity(array);
+  if (new_capacity == 0 || item_size == 0) {
+    return D4F_ARRAY_BAD_ARGS;
+  }
+  while (new_capacity > capacity) {
+    capacity = capacity == 0 ? D4F_ARRAY_INITIAL_CAP : capacity * 2;
+  }
+  if (capacity != array_capacity(array)) {
+    void *data_ptr = array_dataptr(array);
+    data_ptr = realloc(data_ptr, item_size * capacity);
+    if (data_ptr == NULL) {
+      return D4F_ARRAY_ALLOC_NULL;
+    }
+    status = (D4F_ARRAY_STATUS)array_view_init(view, data_ptr, item_size,
+                                               new_length, capacity);
+  }
+  return status;
 }
 
-static int __array_maybe_grow_data(array_t *array, size_t item_size,
-                                   size_t capacity) {
-  size_t array_capacity = array->__capacity;
-  if (capacity == 0 || item_size == 0) {
-    return D4F_ARRAY_SUCCESS;
+D4F_ARRAY_STATUS array_init(array_t *array, size_t item_size, size_t capacity) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  if (array == NULL) {
+    return D4F_ARRAY_BAD_ARGS;
   }
-  while (capacity > array_capacity) {
-    array_capacity =
-        array_capacity == 0 ? D4F_ARRAY_INITIAL_CAP : array_capacity * 2;
+  status = _array_maybe_grow_data(array, item_size, 0, capacity);
+  if (status != D4F_ARRAY_OK) {
+    return status;
   }
-  if (array_capacity != array->__capacity) {
-    void *data_ptr = NULL;
-    data_ptr = realloc(array->data_ptr, item_size * array_capacity);
-    D4F_ARRAY_PTR_VALIDATE(data_ptr);
-    array->data_ptr = data_ptr;
-    array->__item_size = item_size;
-    array->__capacity = array_capacity;
-  }
-  return D4F_ARRAY_SUCCESS;
+  return D4F_ARRAY_OK;
 }
 
-int array_init(array_t *array, size_t item_size, size_t capacity) {
-  D4F_ARRAY_PTR_VALIDATE(array);
-  array_reset(array);
-  if (!__array_maybe_grow_data(array, item_size, capacity)) {
-    return D4F_ARRAY_FAIL;
+D4F_ARRAY_STATUS array_from(array_t *array, void *data, size_t item_size,
+                            size_t length) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  if (array == NULL) {
+    return D4F_ARRAY_BAD_ARGS;
   }
-  array->length = 0;
-  return D4F_ARRAY_SUCCESS;
+  status = _array_maybe_grow_data(array, item_size, length, length);
+  if (status != D4F_ARRAY_OK) {
+    return status;
+  }
+  memcpy(array_dataptr(array), data, item_size * length);
+  return D4F_ARRAY_OK;
 }
 
-int array_from(array_t *array, void *data, size_t item_size, size_t length) {
-  D4F_ARRAY_PTR_VALIDATE(array);
-  if (data == NULL || length == 0 || item_size == 0) {
-    return array_init(array, item_size, length);
-  }
-  array_reset(array);
-  if (!__array_maybe_grow_data(array, item_size, length)) {
-    return D4F_ARRAY_FAIL;
-  }
-  memcpy(array->data_ptr, data, array->__item_size * length);
-  array->length = length;
-  return D4F_ARRAY_SUCCESS;
+D4F_ARRAY_STATUS array_copy(array_t *src, array_t *dest) {
+  array_view_t *src_view = (array_view_t *)src;
+  return array_from(dest, src_view->data_ptr, src_view->item_size,
+                    src_view->length);
 }
 
-int array_copy(array_t *src, array_t *dest) {
-  D4F_ARRAY_PTR_VALIDATE(src);
-  D4F_ARRAY_PTR_VALIDATE(dest);
-  array_reset(dest);
-  if (!__array_maybe_grow_data(dest, src->__item_size, src->length)) {
-    return D4F_ARRAY_FAIL;
+D4F_ARRAY_STATUS array_slice(array_t *array, int start, int end,
+                             array_t *slice) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  array_view_t *view = (array_view_t *)array;
+  array_view_t tmp = {0};
+  status = (D4F_ARRAY_STATUS)array_view_slice(view, start, end, &tmp);
+  if (status != D4F_ARRAY_OK) {
+    return status;
   }
-  memcpy(dest->data_ptr, src->data_ptr, src->__item_size * src->length);
-  dest->length = src->length;
-  return D4F_ARRAY_SUCCESS;
+  status = (D4F_ARRAY_STATUS)array_from(slice, tmp.data_ptr, tmp.item_size,
+                                        tmp.length);
+  return status;
 }
 
-int array_slice(array_t *array, int start, int end, array_t *slice) {
-  size_t start_idx = 0;
-  size_t end_idx = 0;
-  size_t slice_length = 0;
-  D4F_ARRAY_PTR_VALIDATE(array);
-  D4F_ARRAY_PTR_VALIDATE(slice);
-  start_idx = (start < 0) ? array->length + start : start;
-  end_idx = ((end < 0) ? array->length + end : end) - 1;
-  if (start_idx > end_idx || start_idx >= array->length ||
-      end_idx >= array->length) {
-    D4F_ARRAY_ERROR("Slice bad boundary");
-    return D4F_ARRAY_FAIL;
-  }
-  slice_length = end_idx - start_idx + 1;
-  array_reset(slice);
-  if (!__array_maybe_grow_data(slice, array->__item_size, slice_length)) {
-    return D4F_ARRAY_FAIL;
-  }
-  memcpy(slice->data_ptr,
-         (char *)array->data_ptr + (start_idx * array->__item_size),
-         array->__item_size * slice_length);
-  slice->length = slice_length;
-  return D4F_ARRAY_SUCCESS;
-}
-
-void array_reset(array_t *array) {
+void array_free(array_t *array) {
+  array_view_t *view = (array_view_t *)array;
   if (array == NULL) {
     return;
   }
-  array->__item_size = 0;
-  array->__capacity = 0;
-  if (array->data_ptr) {
-    free(array->data_ptr);
-    array->data_ptr = NULL;
+  view->item_size = 0;
+  view->capacity = 0;
+  if (view->data_ptr) {
+    free(view->data_ptr);
+    view->data_ptr = NULL;
   }
-  array->length = 0;
+  view->length = 0;
 }
 
-void *array_at(array_t *array, size_t i) {
-  D4F_ARRAY_PTR_VALIDATE(array);
-  if (i >= array->length) {
-    D4F_ARRAY_ERROR("Index is out of range");
-    return NULL;
+D4F_ARRAY_STATUS array_push_n(array_t *array, void *item, size_t n) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  array_view_t *view = (array_view_t *)array;
+  size_t new_capacity = 0;
+  status = (D4F_ARRAY_STATUS)array_view_validate((array_view_t *)array);
+  if (status != D4F_ARRAY_OK) {
+    return status;
   }
-  return (char *)array->data_ptr + array->__item_size * i;
-}
-
-int array_push_n(array_t *array, void *items, size_t n) {
-  D4F_ARRAY_PTR_VALIDATE(array);
-  D4F_ARRAY_PTR_VALIDATE(items);
   if (n == 0) {
-    return D4F_ARRAY_SUCCESS;
+    return D4F_ARRAY_OK;
   }
-  if (!__array_maybe_grow_data(array, array->__item_size, array->length + n)) {
-    return D4F_ARRAY_FAIL;
+  new_capacity =
+      (view->length + n > view->capacity) ? view->length + n : view->capacity;
+  status = _array_maybe_grow_data(array, view->item_size, view->length,
+                                  new_capacity);
+  if (status != D4F_ARRAY_OK) {
+    return status;
   }
-  memcpy((char *)array->data_ptr + (array->__item_size * array->length), items,
-         (array->__item_size * n));
-  array->length += n;
-  return D4F_ARRAY_SUCCESS;
+  return (D4F_ARRAY_STATUS)array_view_push_n(view, item, n);
 }
 
-int array_push(array_t *array, void *item) {
-  return array_push_n(array, item, 1);
+D4F_ARRAY_STATUS array_insert_n_at(array_t *array, size_t index, void *items,
+                                   size_t n) {
+  D4F_ARRAY_STATUS status = D4F_ARRAY_OK;
+  array_view_t *view = (array_view_t *)array;
+  size_t new_capacity = 0;
+  status = (D4F_ARRAY_STATUS)array_view_validate((array_view_t *)array);
+  if (status != D4F_ARRAY_OK) {
+    return status;
+  }
+  if (n == 0) {
+    return D4F_ARRAY_OK;
+  }
+  new_capacity =
+      (view->length + n > view->capacity) ? view->length + n : view->capacity;
+  status = _array_maybe_grow_data(array, view->item_size, view->length,
+                                  new_capacity);
+  if (status != D4F_ARRAY_OK) {
+    return status;
+  }
+  return (D4F_ARRAY_STATUS)array_view_insert_n_at(view, index, items, n);
 }
 
-int array_pop(array_t *array, void **out_item) {
-  D4F_ARRAY_PTR_VALIDATE(array);
-  D4F_ARRAY_PTR_VALIDATE(out_item);
-  if (array->length == 0) {
-    return D4F_ARRAY_FAIL;
+const char *array_status_message(const D4F_ARRAY_STATUS status) {
+  if (status >= _D4F_ARRAY_ERROR_COUNT) {
+    return "UNKNOWN";
   }
-  memcpy(*out_item, array_at(array, array->length - 1), array->__item_size);
-  array->length--;
-  return D4F_ARRAY_SUCCESS;
-}
-
-int array_foreach(array_t *array, array_foreach_callback_t cb, void *ctx) {
-  size_t i;
-  D4F_ARRAY_PTR_VALIDATE(array);
-  for (i = 0; i < array->length; i++) {
-    if (cb(array_at(array, i), i, ctx) != 0)
-      break;
-  }
-  return D4F_ARRAY_SUCCESS;
+  return _array_status_messages[status];
 }

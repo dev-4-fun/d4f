@@ -2,9 +2,9 @@
 #include <string.h>
 
 #define D4F_ARRAY_VIEW_IMPLEMENTATION
-#include "array_view.h"
+#include "d4f/array_view.h"
 
-static const char *const _status_messages[] = {
+static const char *const _array_view_status_messages[] = {
 #define X(id, msg) msg,
     D4F_ARRAY_VIEW_STATUS_LIST(X)
 #undef X
@@ -135,7 +135,52 @@ D4F_ARRAY_VIEW_STATUS array_view_pop(array_view_t *array_view, void **item) {
     *item = NULL;
     return D4F_ARRAY_VIEW_OUT_OF_BOUNDS;
   }
-  *item = array_view_at(array_view, --array_view->length);
+  *item = array_view_at(array_view, array_view->length - 1);
+  array_view->length--;
+  return D4F_ARRAY_VIEW_OK;
+}
+
+D4F_ARRAY_VIEW_STATUS array_view_insert_n_at(array_view_t *array_view,
+                                             size_t index, const void *items,
+                                             size_t n) {
+  D4F_ARRAY_VIEW_STATUS status = D4F_ARRAY_VIEW_OK;
+  status = array_view_validate(array_view);
+  if (status != D4F_ARRAY_VIEW_OK) {
+    return status;
+  }
+  if (items == NULL) {
+    return D4F_ARRAY_VIEW_BAD_ARGS;
+  }
+  if (index == array_view->length) {
+    return array_view_push_n(array_view, items, n);
+  }
+  if (array_view->length + n > array_view->capacity ||
+      index >= array_view->length) {
+    return D4F_ARRAY_VIEW_OUT_OF_BOUNDS;
+  }
+  memmove(
+      array_view_at_with_boundary(array_view, index + n, array_view->capacity),
+      array_view_at_with_boundary(array_view, index, array_view->capacity),
+      (array_view->length - index) * array_view->item_size);
+  memcpy(array_view_at(array_view, index), items, n * array_view->item_size);
+  array_view->length += n;
+  return D4F_ARRAY_VIEW_OK;
+}
+
+D4F_ARRAY_VIEW_STATUS array_view_remove_n_at(array_view_t *array_view,
+                                             size_t index, size_t n) {
+  D4F_ARRAY_VIEW_STATUS status = D4F_ARRAY_VIEW_OK;
+  status = array_view_validate(array_view);
+  if (status != D4F_ARRAY_VIEW_OK) {
+    return status;
+  }
+  if (index + n > array_view->length) {
+    return D4F_ARRAY_VIEW_OUT_OF_BOUNDS;
+  }
+  memmove(array_view_at(array_view, index),
+          array_view_at(array_view, index + n),
+          (array_view->length - (index + n)) * array_view->item_size);
+  array_view->length -= n;
   return D4F_ARRAY_VIEW_OK;
 }
 
@@ -162,5 +207,5 @@ const char *array_view_status_message(const D4F_ARRAY_VIEW_STATUS status) {
   if (status >= _D4F_ARRAY_VIEW_ERROR_COUNT) {
     return "UNKNOWN";
   }
-  return _status_messages[status];
+  return _array_view_status_messages[status];
 }

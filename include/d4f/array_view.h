@@ -14,13 +14,13 @@ extern "C" {
 #endif
 
 #define D4F_ARRAY_VIEW_STATUS_LIST(X)                                          \
-  X(D4F_ARRAY_VIEW_OK, "OK")                                                   \
-  X(D4F_ARRAY_VIEW_BAD_ARGS, "Bad arguments")                                  \
-  X(D4F_ARRAY_VIEW_OUT_OF_BOUNDS, "Out of bounds")                             \
-  X(D4F_ARRAY_VIEW_TYPE_MISMATCH, "Type mismatch")
+  X(_OK, "OK")                                                                 \
+  X(_BAD_ARGS, "Bad arguments")                                                \
+  X(_OUT_OF_BOUNDS, "Out of bounds")                                           \
+  X(_TYPE_MISMATCH, "Type mismatch")
 
 typedef enum {
-#define X(id, msg) id,
+#define X(id, msg) D4F_ARRAY_VIEW##id,
   D4F_ARRAY_VIEW_STATUS_LIST(X)
 #undef X
       _D4F_ARRAY_VIEW_ERROR_COUNT
@@ -44,6 +44,10 @@ typedef struct {
                   sizeof((items)) / sizeof(*(items)))
 #define array_view_push(array_view, item)                                      \
   array_view_push_n((array_view), (item), 1)
+#define array_view_insert_at(array_view, index, item)                          \
+  array_view_insert_n_at((array_view), (index), (item), 1)
+#define array_view_remove_at(array_view, index)                                \
+  array_view_remove_n_at((array_view), (index), 1)
 #define array_view_length(array_view) (array_view) ? (array_view)->length : 0
 #define array_view_capacity(array_view)                                        \
   (array_view) ? (array_view)->capacity : 0
@@ -69,6 +73,13 @@ D4FDEF D4F_ARRAY_VIEW_STATUS array_view_push_n(array_view_t *array_view,
                                                const void *items, size_t n);
 D4FDEF D4F_ARRAY_VIEW_STATUS array_view_pop(array_view_t *array_view,
                                             void **item);
+
+D4FDEF D4F_ARRAY_VIEW_STATUS array_view_insert_n_at(array_view_t *array_view,
+                                                    size_t index,
+                                                    const void *items,
+                                                    size_t n);
+D4FDEF D4F_ARRAY_VIEW_STATUS array_view_remove_n_at(array_view_t *array_view,
+                                                    size_t index, size_t n);
 
 D4FDEF D4F_ARRAY_VIEW_STATUS array_view_foreach(const array_view_t *array_view,
                                                 array_foreach_callback_t cb,
