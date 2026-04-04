@@ -63,8 +63,9 @@ array.o: dirs array_view.o
 		-I$(INCLUDE_DIR) \
 		$(SRC_DIR)/array.c -fPIC
 
-array.a: array.o
-	ar -r $(LIB_DIR)/lib$(LIB_PREFIX)array.a $(BUILD_DIR)/array.o
+array.a: array.o array_view.o
+	ar -r $(LIB_DIR)/lib$(LIB_PREFIX)array.a \
+		$(BUILD_DIR)/array.o $(BUILD_DIR)/array_view.o
 
 array.so: array.o array_view.o
 	$(CC) -shared -o $(LIB_DIR)/lib$(LIB_PREFIX)array.so \

@@ -5,6 +5,12 @@
 
 #include "d4f/array_view.h"
 
+/*
+ * Dynamic array: same layout as array_view_t but owns data_ptr (realloc/free).
+ * Use array_free when finished. Status codes include all view codes plus
+ * D4F_ARRAY_ALLOC_NULL.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,12 +23,14 @@ extern "C" {
 #endif
 #endif
 
+/* First allocation size when growing from zero capacity. */
 #ifndef D4F_ARRAY_INITIAL_CAP
 #define D4F_ARRAY_INITIAL_CAP 64
 #endif
 
 #define D4F_ARRAY_STATUS_LIST(X) X(_ALLOC_NULL, "Allocation failure")
 
+/* View statuses first, then D4F_ARRAY_ALLOC_NULL. */
 typedef enum {
 #define X(id, msg) D4F_ARRAY##id,
   D4F_ARRAY_VIEW_STATUS_LIST(X) D4F_ARRAY_STATUS_LIST(X)
@@ -32,6 +40,7 @@ typedef enum {
 
 typedef array_view_t array_t;
 
+/* Cast to array_view_t*; array_reset only clears length (does not free). */
 #define array_capacity(array) (array_view_capacity((array_view_t *)(array)))
 #define array_dataptr(array) (((array_view_t *)(array))->data_ptr)
 #define array_length(array) (array_view_length((array_view_t *)(array)))
@@ -54,15 +63,22 @@ typedef array_view_t array_t;
 #define array_reset(array)                                                     \
   ((array) ? (void)(((array_view_t *)(array))->length = 0) : (void)0)
 
+/* Allocate buffer with given capacity; length starts at 0. */
 D4FDEF D4F_ARRAY_STATUS array_init(array_t *array, size_t item_size,
                                    size_t capacity);
+/* Copy length elements from data into owned storage. */
 D4FDEF D4F_ARRAY_STATUS array_from(array_t *array, void *data, size_t item_size,
                                    size_t length);
+/* Replace dest contents with a copy of src. */
 D4FDEF D4F_ARRAY_STATUS array_copy(array_t *src, array_t *dest);
+/* Copy slice of array into dest (dest owns new buffer). */
 D4FDEF D4F_ARRAY_STATUS array_slice(array_t *array, int start, int end,
                                     array_t *slice);
+/* Free buffer and clear fields. */
 D4FDEF void array_free(array_t *array);
+/* Append n elements; grows buffer if needed. */
 D4FDEF D4F_ARRAY_STATUS array_push_n(array_t *array, void *item, size_t n);
+/* Insert n elements at index; grows if needed. */
 D4FDEF D4F_ARRAY_STATUS array_insert_n_at(array_t *array, size_t index,
                                           void *items, size_t n);
 D4FDEF const char *array_status_message(D4F_ARRAY_STATUS status);
